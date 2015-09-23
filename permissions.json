@@ -1,0 +1,16 @@
+{
+ "maintainer": "Timothy <timothyhobbs@seznam.cz>",
+ "executable": "/bin/bash",
+ "basic-common-permissions": true,
+ "system-dirs": {
+  "/": "/host"
+ },
+ "description": "A small simple gui for managing subusers.",
+ "gui": {
+  "clipboard": false,
+  "cursors": false,
+  "system-tray": false
+ },
+ "run-commands-on-host": true,
+ "inherit-envvars":["SUBUSER_EXECUTABLE"]
+}
