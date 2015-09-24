@@ -22,18 +22,17 @@ class MainWindow(QtGui.QMainWindow):
     PyQt4.uic.loadUi(os.path.join(sourceDir,"data/subuser.ui"), self)
     subuserIconPixmap = QtGui.QPixmap(icons["subuser-logo"])
     self.subuserIcon.setPixmap(subuserIconPixmap)
-    # Load repositories
+    # Display repositories
     self.repositoriesList = None
-    self.loadRepositoriesList()
-    # hook up event handlers
-    #self.listWidget.itemActivated.connect(self.on_listWidget_itemActivated)
+    self.displayRepositoriesList()
     # set icons
     self.setWindowIcon(QtGui.QIcon(icons["subuser-logo"]))
     self.show()
-    # Load subusers
-    self.loadSubusersList()
+    # Display subusers
+    self.displaySubusersList()
 
-  def loadSubusersList(self):
+  def displaySubusersList(self):
+    self.sectionTitle.setText("Subusers")
     subusersDividedDict = subuser.executeGetJson("list subusers --json")
     subusersDict = {}
     subusersDict.update(subusersDividedDict["locked"])
@@ -42,27 +41,55 @@ class MainWindow(QtGui.QMainWindow):
     for subuserName,attributes in subusersDict.items():
       if not subuserName.startswith("!"):
         widgetItem = SubuserListWidgetItem(subuserName,attributes)
+        def wrapsSelected():
+          thisWidgetItem = widgetItem
+          def selected():
+            self.selectionLabel.setText(thisWidgetItem.name)
+            self.tabWidget.clear()
+            self.tabWidget.insertTab(0,thisWidgetItem.getActionsWidget(),"Actions")
+          return selected
+        widgetItem.selected = wrapsSelected()
         self.listWidget.addItem(widgetItem)
+    firstItem = self.listWidget.item(0)
+    if firstItem:
+      self.listWidget.setItemSelected(firstItem,True)
 
-  def loadRepositoriesList(self,loadToListWidget=False):
+  def displayRepositoriesList(self,displayToListWidget=False):
+    if displayToListWidget:
+      self.sectionTitle.setText("Repositories")
     self.repositoriesList = subuser.executeGetJson("list repositories --json")
     repositoriesItem = self.sideBar.topLevelItem(1)
     repositoriesItem.takeChildren()
     repositoryItems=[]
-    if loadToListWidget:
+    if displayToListWidget:
       self.listWidget.clear()
     for repositoryName,attributes in self.repositoriesList.items():
       newItem = RepositoryTreeWidgetItem(repositoryName,attributes)
       repositoryItems.append(newItem)
-      if loadToListWidget:
+      if displayToListWidget:
         widgetItem = QtGui.QListWidgetItem(newItem.text(0))
         widgetItem.setIcon(QtGui.QIcon(icons["repository"]))
-        def createSelector():
+        def wrapsActivated():
           item = newItem
           return (lambda: self.sideBar.setCurrentItem(item))
-        widgetItem.activated = createSelector()
+        widgetItem.activated = wrapsActivated()
+        def wrapsSelected():
+          item = newItem
+          def selected():
+            self.selectionLabel.setText(item.displayName)
+            self.tabWidget.clear()
+            self.tabWidget.insertTab(0,item.getActionsWidget(),"Actions")
+          return selected
+        widgetItem.selected = wrapsSelected()
         self.listWidget.addItem(widgetItem)
     repositoriesItem.addChildren(repositoryItems)
+
+  def displayRepository(self,repoItem):
+    self.sectionTitle.setText(repoItem.displayName)
+    self.listWidget.clear()
+    imageSources = subuser.executeGetJson("list available --json")
+    for imageSourceName,attributes in imageSources[repoItem.name].items():
+      self.listWidget.addItem(ImageSourceListWidgetItem(imageSourceName,attributes))
 
   def on_listWidget_itemActivated(self,item):
     try:
@@ -70,18 +97,25 @@ class MainWindow(QtGui.QMainWindow):
     except AttributeError:
       pass
 
+  def on_listWidget_itemSelectionChanged(self):
+    try:
+      try:
+        item = self.listWidget.selectedItems()[0]
+      except IndexError:
+        return
+      item.selected()
+    except AttributeError:
+      pass
+
   @QtCore.pyqtSlot()
   def on_sideBar_itemSelectionChanged(self):
     selection = self.sideBar.currentItem()
     if selection.text(0) == "subusers":
-      self.loadSubusersList()
+      self.displaySubusersList()
     elif selection.text(0) == "repositories":
-      self.loadRepositoriesList(loadToListWidget=True)
+      self.displayRepositoriesList(displayToListWidget=True)
     elif type(selection) is RepositoryTreeWidgetItem:
-      self.listWidget.clear()
-      imageSources = subuser.executeGetJson("list available --json")
-      for imageSourceName,attributes in imageSources[selection.name].items():
-        self.listWidget.addItem(ImageSourceListWidgetItem(imageSourceName,attributes))
+      self.displayRepository(selection)
 
   def closeEvent(self,event):
     shutil.rmtree(communicationsDir)

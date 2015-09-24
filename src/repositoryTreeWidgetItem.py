@@ -10,10 +10,22 @@ class RepositoryTreeWidgetItem(QtGui.QTreeWidgetItem):
     self.attributes = repositoryAttributes
     if self.attributes["temporary"]:
       try:
-        labelText = self.attributes["source-dir"]
+        self.displayName = self.attributes["source-dir"]
       except KeyError:
-        labelText = self.attributes["git-origin"]
+        self.displayName = self.attributes["git-origin"]
     else:
-      labelText = self.name
-    self.setText(0,labelText)
+      self.displayName = self.name
+    self.setText(0,self.displayName)
     self.setIcon(0,QtGui.QIcon(icons["repository"]))
+
+  def getActionsWidget(self):
+    layout = QtGui.QVBoxLayout()
+    attributesLabel = QtGui.QLabel()
+    attributesLabel.setText(str(self.attributes))
+    layout.addWidget(attributesLabel)
+    #layout.setSizeConstraint(QtGui.QLayout.SetMinAndMaxSize)
+    frame = QtGui.QFrame()
+    frame.setLayout(layout)
+    scrollArea = QtGui.QScrollArea()
+    scrollArea.setWidget(frame)
+    return scrollArea

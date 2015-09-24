@@ -14,3 +14,15 @@ class SubuserListWidgetItem(QtGui.QListWidgetItem):
 
   def activated(self):
     subuser.execute("run "+self.name+" &")
+
+  def getActionsWidget(self):
+    layout = QtGui.QVBoxLayout()
+    attributesLabel = QtGui.QLabel()
+    attributesLabel.setText(str(self.attributes))
+    layout.addWidget(attributesLabel)
+    #layout.setSizeConstraint(QtGui.QLayout.SetMinAndMaxSize)
+    frame = QtGui.QFrame()
+    frame.setLayout(layout)
+    scrollArea = QtGui.QScrollArea()
+    scrollArea.setWidget(frame)
+    return scrollArea
