@@ -13,7 +13,7 @@ class SubuserListWidgetItem(QtGui.QListWidgetItem):
     self.setIcon(QtGui.QIcon(icons["subuser"]))
 
   def activated(self):
-    subuser.execute("run "+self.name+" &")
+    subuser.execute(["run",self.name])
 
   def getActionsWidget(self):
     layout = QtGui.QVBoxLayout()

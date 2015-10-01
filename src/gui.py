@@ -33,7 +33,7 @@ class MainWindow(QtGui.QMainWindow):
 
   def displaySubusersList(self):
     self.sectionTitle.setText("Subusers")
-    subusersDividedDict = subuser.executeGetJson("list subusers --json")
+    subusersDividedDict = subuser.executeGetJson(["list","subusers","--json"])
     subusersDict = {}
     subusersDict.update(subusersDividedDict["locked"])
     subusersDict.update(subusersDividedDict["unlocked"])
@@ -57,7 +57,7 @@ class MainWindow(QtGui.QMainWindow):
   def displayRepositoriesList(self,displayToListWidget=False):
     if displayToListWidget:
       self.sectionTitle.setText("Repositories")
-    self.repositoriesList = subuser.executeGetJson("list repositories --json")
+    self.repositoriesList = subuser.executeGetJson(["list","repositories","--json"])
     repositoriesItem = self.sideBar.topLevelItem(1)
     repositoriesItem.takeChildren()
     repositoryItems=[]
@@ -83,13 +83,30 @@ class MainWindow(QtGui.QMainWindow):
         widgetItem.selected = wrapsSelected()
         self.listWidget.addItem(widgetItem)
     repositoriesItem.addChildren(repositoryItems)
+    if displayToListWidget:
+      firstItem = self.listWidget.item(0)
+      if firstItem:
+        self.listWidget.setItemSelected(firstItem,True)
+
 
   def displayRepository(self,repoItem):
     self.sectionTitle.setText(repoItem.displayName)
     self.listWidget.clear()
-    imageSources = subuser.executeGetJson("list available --json")
+    imageSources = subuser.executeGetJson(["list","available","--json"])
     for imageSourceName,attributes in imageSources[repoItem.name].items():
-      self.listWidget.addItem(ImageSourceListWidgetItem(imageSourceName,attributes))
+      newItem = ImageSourceListWidgetItem(imageSourceName,attributes)
+      def wrapsSelected():
+        item = newItem
+        def selected():
+          self.selectionLabel.setText(item.name)
+          self.tabWidget.clear()
+          self.tabWidget.insertTab(0,item.getActionsWidget(),"Actions")
+        return selected
+      newItem.selected = wrapsSelected()
+      self.listWidget.addItem(newItem)
+    firstItem = self.listWidget.item(0)
+    if firstItem:
+      self.listWidget.setItemSelected(firstItem,True)
 
   def on_listWidget_itemActivated(self,item):
     try:
@@ -116,9 +133,6 @@ class MainWindow(QtGui.QMainWindow):
       self.displayRepositoriesList(displayToListWidget=True)
     elif type(selection) is RepositoryTreeWidgetItem:
       self.displayRepository(selection)
-
-  def closeEvent(self,event):
-    shutil.rmtree(communicationsDir)
 
 def main():
   app = QtGui.QApplication(sys.argv)

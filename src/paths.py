@@ -15,6 +15,3 @@ icons = {"subuser-logo":"data/subuser.png"
          ,"image-source":"data/vibrant-icons/image-source.png"}
 for name,path in icons.items():
   icons[name] = os.path.join(sourceDir,path)
-
-communicationsDir = tempfile.mkdtemp(prefix="subuser-gui",dir="/host/tmp")
-communicationsDirOnHost = "/"+os.path.join(*(communicationsDir.split(os.sep)[2:]))
